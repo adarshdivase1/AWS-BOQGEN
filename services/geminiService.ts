@@ -2,11 +2,12 @@ import { GoogleGenAI, Type } from '@google/genai';
 import type { Boq, BoqItem, ProductDetails, ValidationResult, TokenUsage } from '../types';
 import { productDatabase } from '../data/productData';
 
-// VITE SPECIFIC: access env vars via import.meta.env
-const apiKey = import.meta.env.VITE_API_KEY;
+// VITE SPECIFIC: Safely access env vars via import.meta.env
+// We use optional chaining just in case import.meta.env is undefined in some contexts
+const apiKey = import.meta.env?.VITE_API_KEY;
 
 if (!apiKey) {
-  console.error("VITE_API_KEY is not set in .env file.");
+  console.error("VITE_API_KEY is not set in .env file or environment variables.");
 }
 
 const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key-for-build' });
@@ -61,16 +62,14 @@ A JSON list of available products is provided in this context. Check this first.
         const cache = await ai.caches.create({
             model: modelName,
             // displayName property is not supported in CreateCachedContentParameters
-            config: {
-                systemInstruction: systemInstruction,
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [{ text: `Here is the Custom Product Database you must use:\n${databaseString}` }]
-                    }
-                ],
-            },
-            ttlSeconds: 3600, // 1 Hour default
+            systemInstruction: systemInstruction,
+            contents: [
+                {
+                    role: 'user',
+                    parts: [{ text: `Here is the Custom Product Database you must use:\n${databaseString}` }]
+                }
+            ],
+            ttl: '3600s', // 1 Hour default
         });
 
         if (cache.name) {
